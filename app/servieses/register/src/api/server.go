@@ -16,4 +16,5 @@ func (s *Server) Run(){
 	s.Use(middleware.Logger())
 
 	s.POST("/adduser", AddUser)
+	s.Logger.Panic(s.Start(":2022"))
 }
