@@ -98,14 +98,14 @@ func AddUserToDB(u User) error{
 		return err
 	}
 	
-
-	result := db.Create(&u)
-
 	var errs error
 	u.Token, errs = CreateToken(u)
 	if errs != nil {
 		return errs
 	}
+
+	result := db.Create(&u)
+
 	produceMessage("users", CreateMessage(u))
 
 	if result.Error != nil {
