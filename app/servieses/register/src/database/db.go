@@ -1,12 +1,18 @@
 package database
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/segmentio/kafka-go"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -17,6 +23,17 @@ type User struct{
 	Email string `json:"email"`
 	Password string `json:"password"`
 	Token string `json:"token"`
+}
+func EncodeStringToUser(data string) User {
+	var res User
+
+	result := strings.Split(data, "|")
+	res.Username = result[0]
+	res.Email = result[1]
+	res.Password = result[2]
+	res.Token = result[3]
+
+	return res
 }
 func GenerateKeyPair(bits int) (string, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
@@ -31,6 +48,32 @@ func GenerateKeyPair(bits int) (string, error) {
 	})
 
 	return string(privPEM), nil
+}
+func CreateMessage(u User) string {
+	result := fmt.Sprintf("%s|%s|%s|%s", u.Username, u.Email, u.Password, u.Token)
+	return result
+}
+func produceMessage(topic string, message string) {
+	loger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  []string{"localhost:9092"},
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
+	})
+
+	defer writer.Close()
+
+
+	err := writer.WriteMessages(context.Background(),
+		kafka.Message{
+			Key:   []byte("Key"), 
+			Value: []byte(message),
+		},
+	)
+	if err != nil {
+		loger.Error( err.Error())
+	}
+	loger.Info("Сообщение отправлено:", message, nil)
 }
 func CreateToken(user User) (string, error) {
 	jwtSecret, err := GenerateKeyPair(2048)
@@ -63,7 +106,7 @@ func AddUserToDB(u User) error{
 	if errs != nil {
 		return errs
 	}
-
+	produceMessage("users", CreateMessage(u))
 
 	if result.Error != nil {
 		return result.Error
