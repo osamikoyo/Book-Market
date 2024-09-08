@@ -11,13 +11,13 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o book-storage ./src/app/app.go
+RUN go build -o book-purshaes ./src/app/app.go
 
 
 RUN apk add --no-cache sqlite sqlite-dev
 
 
-EXPOSE 2022
+EXPOSE 2023
 
 # Run
-CMD ["./book-storage"]
+CMD ["./book-purshaes"]

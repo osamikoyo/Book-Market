@@ -1,7 +1,10 @@
 package main
 
-import "money/src/api"
+import (
+	"money/src/server"
+)
 
 func main() {
-	api.Api()
+	s := server.New()
+	s.Run()
 }

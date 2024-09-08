@@ -3,6 +3,9 @@ package database
 import (
 	"log/slog"
 	"os"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 type User struct{
@@ -14,16 +17,27 @@ type User struct{
 
 
 type Purshaes struct{
-	Id string
-	Boors string
-	Sale int
-	Username string
+	Id string `json:"id"`
+	Books string `json:"books"`
+	Sale int	`json:"sale"`
+	Username string `json:"username"`
 }
 
 
-func GetPursh(u User) (Purshaes, error){
+func GetPursh(u User) ([]Purshaes, error){
+	var Pershaes []Purshaes
+
 	loger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	err
+	db, err := gorm.Open(sqlite.Open("purshes.db"))
+	if err != nil {
+		loger.Error(err.Error())
+		return Pershaes, err
+	}
+	res := db.Where("username = ?", u.Username).Find(&Pershaes)
+	if res.Error != nil {
+		loger.Error(res.Error.Error())
+		return Pershaes, res.Error
+	}
 
-
+	return Pershaes, nil
 }
